@@ -1,4 +1,5 @@
 import { pgEnum } from "drizzle-orm/pg-core";
 
-export const roleEnum = pgEnum("role", ["passager", "conducteur"]);
-export const statutEnum = pgEnum("statut", ["prevu", "en_cours", "termine", "annule"]);
+export const userRoles = ["admin", "client", "chauffeur"] as const; // readonly table
+export type UserRoles = (typeof userRoles)[number]; // typescript type
+export const userRolesEnum = pgEnum("userRoles", userRoles); // pg enum
