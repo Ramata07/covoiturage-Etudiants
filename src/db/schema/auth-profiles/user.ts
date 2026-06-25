@@ -1,5 +1,6 @@
-import { pgTable, timestamp, varchar } from "drizzle-orm/pg-core";
+import { pgTable, varchar } from "drizzle-orm/pg-core";
 import { UserRoles, userRolesEnum } from "../enums";
+import { createdAt, updatedAt } from "@/db/schema-helpers";
 
 export const UsersTable = pgTable("users", {
   id: varchar("id", { length: 150 }).primaryKey(),
@@ -8,9 +9,9 @@ export const UsersTable = pgTable("users", {
   email: varchar("email", { length: 100 }).notNull().unique(),
   password: varchar("password", { length: 150 }).notNull(),
   role: userRolesEnum().notNull().default("client"),
-  //photo:
-  created_At: timestamp("created_at").notNull(),
-  updated_At: timestamp("update_at").notNull(),
+  photo: varchar("photo", { length: 200 }).notNull(),
+  created_At: createdAt(),
+  updated_At: updatedAt(),
 });
 
 export type PublicUser = {

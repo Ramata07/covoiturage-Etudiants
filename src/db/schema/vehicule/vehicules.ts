@@ -1,8 +1,9 @@
 import { integer, pgTable, varchar } from "drizzle-orm/pg-core";
-import { UsersTable } from "./auth-profiles/user";
+import { UsersTable } from "../auth-profiles/user.js";
+import { createdAt, updatedAt } from "@/db/schema-helpers.js";
 
 export const VehiculeTable = pgTable("vehicules", {
-  id: integer().primaryKey().generatedAlwaysAsIdentity(),
+  id: varchar("id", { length: 100 }).notNull(),
   immatriculation: varchar("immatriculation", { length: 15 }).notNull(),
   proprio: varchar("proprio", { length: 150 })
     .references(() => UsersTable.id, {
@@ -10,8 +11,10 @@ export const VehiculeTable = pgTable("vehicules", {
       onUpdate: "cascade",
     })
     .notNull(),
-  nbrePlaces: integer("nbrePlaces").notNull(),
+  nbre_places: integer("nbre_places").notNull(),
   modele: varchar("modele", { length: 100 }).notNull(),
   couleur: varchar("couleur", { length: 100 }).notNull(),
   marque: varchar("marque", { length: 100 }).notNull(),
+  created_At: createdAt(),
+  updated_At: updatedAt(),
 });
