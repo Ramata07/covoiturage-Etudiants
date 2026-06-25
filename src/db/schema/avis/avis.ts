@@ -8,8 +8,6 @@ export const AvisTable = pgTable("avis", {
     id_passager: integer("id_passager").references(() => UsersTable.id),
     nbreEtoiles: integer("nbreEtoiles"),
     commentaire: varchar("commentaire", {length: 300}).notNull(),
-    
-
     created_At: createdAt(),
     updated_At: updatedAt(),
 });
