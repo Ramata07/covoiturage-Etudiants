@@ -1,5 +1,5 @@
 import { pgTable, varchar } from "drizzle-orm/pg-core";
-import { UserRoles, userRolesEnum } from "../enums";
+import { UserRoles, userRolesEnum } from "../enums/enums";
 import { createdAt, updatedAt } from "@/db/schema-helpers";
 
 export const UsersTable = pgTable("users", {
@@ -7,9 +7,9 @@ export const UsersTable = pgTable("users", {
   nom: varchar("nom", { length: 200 }).notNull(),
   prenom: varchar("prenom", { length: 150 }).notNull(),
   email: varchar("email", { length: 100 }).notNull().unique(),
-  password: varchar("password", { length: 150 }).notNull(),
+  mot_de_passe: varchar("mot_de_passe", { length: 150 }).notNull(),
   role: userRolesEnum().notNull().default("client"),
-  photo: varchar("photo", { length: 200 }).notNull(),
+  photo: varchar("photo", { length: 200 }),
   created_At: createdAt(),
   updated_At: updatedAt(),
 });
@@ -20,6 +20,7 @@ export type PublicUser = {
   prenom: string;
   email: string;
   role: UserRoles;
-  createdAt: string;
-  updatedAt: string;
+  photo: string | null;
+  created_At: string;
+  updated_At: string;
 };
