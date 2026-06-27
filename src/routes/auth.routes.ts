@@ -10,6 +10,14 @@ import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 import { randomUUID } from "crypto";
 
+
+/**
+ * TODO:
+ * - Implementer tous les endpoints
+ * - Implémenter une logique basique de JWT token pour l'authentification
+ */
+
+
 export const authRoutes = Router();
 
 // ME
@@ -18,21 +26,18 @@ authRoutes.get(
   async (req, res: Response<ApiResponse<PublicUser>>) => {
 
     const authHeader = req.headers.authorization;
-    const token = authHeader?.split(" ")[1];
+    const tokenMe = authHeader?.split(" ")[1];
 
-    if (!token) {
+    if (!tokenMe) {
     return res.status(401).json(errorResponse("Token manquant"));
 }
 
   try {
-    const tokenData = jwt.verify(token, process.env.JWT_SECRET!);
-} catch {
-    return res.status(401).json(errorResponse("Token invalide"));
-}
 
-const tokenData = jwt.verify(token, process.env.JWT_SECRET!) as { id: string; role: string };
+    const tokenDataMe = jwt.verify(tokenMe, process.env.JWT_SECRET!) as { id: string; role: string };
 
-const existingUser = await db.select().from(UsersTable).where(eq(UsersTable.id, tokenData.id));
+    const existingUser = await db.select().from(UsersTable).where(eq(UsersTable.id, tokenDataMe.id));
+
     if (existingUser.length === 0) {
       return res.status(404).json(errorResponse("Utilisateur non trouvé"));
     }
@@ -40,8 +45,12 @@ const existingUser = await db.select().from(UsersTable).where(eq(UsersTable.id, 
     const user = existingUser[0]!;
     const { mot_de_passe, ...publicUser } = user;
     res.json(successResponse(publicUser));
-  },
-);
+  
+} catch {
+    return res.status(401).json(errorResponse("Token invalide"));
+
+}});
+
 
 // LOGIN
 const loginSchema = z.object({
@@ -59,8 +68,7 @@ authRoutes.post(
     res: Response<ApiResponse<{ email: string; token: string }>>,
   ) => {
     const { email, password } = req.body;
-    
-
+  
     const existingUser = await db.select().from(UsersTable).where(eq(UsersTable.email, email));
     if (existingUser.length === 0) {
       return res.status(404).json(errorResponse("Email non trouvé"));
@@ -72,14 +80,12 @@ authRoutes.post(
       return res.status(401).json(errorResponse("Mot de passe incorrect"));
     }
 
-     const token = jwt.sign({id: user.id, role: user.role }, process.env.JWT_SECRET!, { expiresIn: "7d" });
+     const tokenLogin = jwt.sign({id: user.id, role: user.role }, process.env.JWT_SECRET!, { expiresIn: "7d" });
 
-      res.json(successResponse({ email, token }));
+      res.json(successResponse({ email, token: tokenLogin }));
   },
 
- 
 );
-
 //
 
 // REGISTER
@@ -116,13 +122,64 @@ authRoutes.post(
       .values({ id, nom, prenom, email, mot_de_passe: hashedPassword, role, photo })
       .returning();
 
-    const token = jwt.sign({ id, role }, process.env.JWT_SECRET!, { expiresIn: "7d" });
+    const tokenRegister = jwt.sign({ id, role }, process.env.JWT_SECRET!, { expiresIn: "7d" });
 
     const { created_At, updated_At } = newUser[0]!;
-     res.json(successResponse({ id, nom, prenom, email, role, photo, created_At, updated_At, token }));
+     res.json(successResponse({ id, nom, prenom, email, role, photo, created_At, updated_At, token: tokenRegister }));
   },
 );
 //
 
 // RESET PASSWORD
-authRoutes.post("/reset-password", async (_req, res) => {});
+
+const reset_password_schema = z.object({
+  password: z.string().min(6),
+  new_password: z.string(),
+});
+
+type ResetPasswordBody = z.infer<typeof reset_password_schema>;
+
+authRoutes.post("/reset-password", 
+  validateRequest({ body: reset_password_schema }),
+  async (req:Request<{},{},ResetPasswordBody>,
+         res: Response<ApiResponse<{ message: string }>>
+        ) => {
+        const { password, new_password } = req.body;
+
+const authHeader = req.headers.authorization;
+
+const tokenPassword =authHeader?.split(" ")[1];
+
+if (!tokenPassword) {
+  return res.status(401).json(errorResponse("Token manquant"));
+}
+
+ try {
+    const tokenPasswordData = jwt.verify(tokenPassword, process.env.JWT_SECRET!) as { id: string; role: string };
+    
+    const existingUser = await db.select().from(UsersTable).where(eq(UsersTable.id, tokenPasswordData.id));
+
+    if (existingUser.length === 0) {
+      return res.status(404).json(errorResponse("Utilisateur non trouvé"));
+    }
+
+    const user = existingUser[0]!;
+
+    const isPasswordValid = await bcrypt.compare(password, user.mot_de_passe);
+
+    if (!isPasswordValid) {
+    return res.status(401).json(errorResponse("Mot de passe incorrect"));
+
+};
+
+const hashedNewPassword = await bcrypt.hash(new_password, 15);
+
+await db.update(UsersTable).set({mot_de_passe: hashedNewPassword}).where(eq(UsersTable.id, user.id));
+
+res.json(successResponse({ message: "Mot de passe mis à jour avec succès" }));
+
+} catch {
+    return res.status(401).json(errorResponse("Token invalide"));
+  }
+
+});
