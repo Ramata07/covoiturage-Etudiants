@@ -1,0 +1,16 @@
+/*
+
+Corriger l'implémentation des fichiers (enums, relations, les fichiers index manquants et index.ts faut exporter ) : Done
+Générer et appliquer les migrations (Tout ce qui manipuler dans le schema de la BDD faut appliquer la migration) : Done
+Utiliser direct env. et non process.env. pour les variables d'environnement (JWT_SECRET) : Done
+
+Créer les 2 middlewares: Authenticated, GetUserProfile
+Rajouter les access et refresh token pour l'authentification (dans l'endpoint validation du code OTP)
+Ajouter une table OTP pour la vérification (avec un endpoint spécifique)
+Ajouter de nouveaux endpoints pour renvoyer un nouveau code (pas reçu de code clique sur le lien "renvoyer un nouveau code", vérification OTP, refresh token)
+Tester avec Postman
+
+*/
+
+
+

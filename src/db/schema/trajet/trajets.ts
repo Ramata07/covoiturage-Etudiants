@@ -1,14 +1,14 @@
 import { pgTable, varchar, integer, date,time } from "drizzle-orm/pg-core";
-import { UsersTable } from "../auth-profiles/user.js";
-import { VehiculeTable } from "../vehicule/vehicules.js";
+import { UsersTable } from "../auth-profiles";
+import { VehiculeTable } from "../vehicule";
 import { createdAt, updatedAt } from "@/db/schema-helpers.js";
 
 
 export const TrajetTable = pgTable("trajets", {
 
-    id: varchar("id", { length: 100 }).notNull(),
-    id_conducteur: integer("id_conducteur").references(() => UsersTable.id),
-    id_vehicule: integer("id_vehicule").references(() => VehiculeTable.id),
+    id: varchar("id", { length: 100 }).primaryKey(),
+    id_conducteur: varchar("id_conducteur", { length: 150 }).references(() => UsersTable.id),
+    id_vehicule: varchar("id_vehicule", { length: 100 }).references(() => VehiculeTable.id),
     destination: varchar("destination", {length: 100}).notNull(),
     point_depart: varchar("point_depart", {length: 100}).notNull(),
     prix: integer("prix").notNull(),

@@ -1,9 +1,9 @@
 import { integer, pgTable, varchar } from "drizzle-orm/pg-core";
-import { UsersTable } from "../auth-profiles/user.js";
+import { UsersTable } from "../auth-profiles";
 import { createdAt, updatedAt } from "@/db/schema-helpers.js";
 
 export const VehiculeTable = pgTable("vehicules", {
-  id: varchar("id", { length: 100 }).notNull(),
+  id: varchar("id", { length: 100 }).primaryKey(),
   immatriculation: varchar("immatriculation", { length: 15 }).notNull(),
   proprio: varchar("proprio", { length: 150 })
     .references(() => UsersTable.id, {

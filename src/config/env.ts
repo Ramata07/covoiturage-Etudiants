@@ -10,14 +10,16 @@ const serverEnv = createEnv({
         DATABASE_URL: z.url(),
         NODE_ENV: z
         .enum(['development', 'production', 'test']).default('development'),
-        RATE_LIMIT_MAX: z.coerce.number().default(3), 
+        RATE_LIMIT_MAX: z.coerce.number().default(3),
         RATE_LIMIT_WINDOW_MS: z.coerce.number().default(60_000),
+        JWT_SECRET: z.string().min(1),
     },
 
     runtimeEnv: {
         PORT: process.env.PORT,
         DATABASE_URL: process.env.DATABASE_URL,
         NODE_ENV: process.env.NODE_ENV,
+        JWT_SECRET: process.env.JWT_SECRET,
     },
 });
 

@@ -1,3 +1,4 @@
+import env from "@/config/env";
 import { PublicUser, UsersTable } from "@/db/schema/auth-profiles/user";
 import { userRoles } from "@/db/schema/enums/enums";
 import { validateRequest } from "@/middlewares/validate-request";
@@ -26,7 +27,7 @@ authRoutes.get(
   async (req, res: Response<ApiResponse<PublicUser>>) => {
 
     const authHeader = req.headers.authorization;
-    const tokenMe = authHeader?.split(" ")[1];
+    const tokenMe = authHeader?.split(" ")[1]; //au lieu de l'espace, mettre Bearer
 
     if (!tokenMe) {
     return res.status(401).json(errorResponse("Token manquant"));
@@ -34,9 +35,9 @@ authRoutes.get(
 
   try {
 
-    const tokenDataMe = jwt.verify(tokenMe, process.env.JWT_SECRET!) as { id: string; role: string };
+    const tokenDataMe = jwt.verify(tokenMe, env.JWT_SECRET) as { id: string; role: string };
 
-    const existingUser = await db.select().from(UsersTable).where(eq(UsersTable.id, tokenDataMe.id));
+    const existingUser = await db.select().from(UsersTable).where(eq(UsersTable.id, tokenDataMe.id)); //mettre tout sauf created_at et updated_at
 
     if (existingUser.length === 0) {
       return res.status(404).json(errorResponse("Utilisateur non trouvé"));
@@ -80,7 +81,7 @@ authRoutes.post(
       return res.status(401).json(errorResponse("Mot de passe incorrect"));
     }
 
-     const tokenLogin = jwt.sign({id: user.id, role: user.role }, process.env.JWT_SECRET!, { expiresIn: "7d" });
+     const tokenLogin = jwt.sign({id: user.id, role: user.role }, env.JWT_SECRET, { expiresIn: "7d" });
 
       res.json(successResponse({ email, token: tokenLogin }));
   },
@@ -122,7 +123,7 @@ authRoutes.post(
       .values({ id, nom, prenom, email, mot_de_passe: hashedPassword, role, photo })
       .returning();
 
-    const tokenRegister = jwt.sign({ id, role }, process.env.JWT_SECRET!, { expiresIn: "7d" });
+    const tokenRegister = jwt.sign({ id, role }, env.JWT_SECRET, { expiresIn: "7d" });
 
     const { created_At, updated_At } = newUser[0]!;
      res.json(successResponse({ id, nom, prenom, email, role, photo, created_At, updated_At, token: tokenRegister }));
@@ -155,7 +156,7 @@ if (!tokenPassword) {
 }
 
  try {
-    const tokenPasswordData = jwt.verify(tokenPassword, process.env.JWT_SECRET!) as { id: string; role: string };
+    const tokenPasswordData = jwt.verify(tokenPassword, env.JWT_SECRET) as { id: string; role: string };
     
     const existingUser = await db.select().from(UsersTable).where(eq(UsersTable.id, tokenPasswordData.id));
 

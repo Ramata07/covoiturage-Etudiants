@@ -1,9 +1,9 @@
 import { relations } from "drizzle-orm";
 import { UsersTable } from "../auth-profiles";
-import { VehiculeTable } from "../vehicule/vehicules";
-import { ReservationTable } from "../reservation/reservations";
-import { TrajetTable } from "../trajet/trajets";
-import { AvisTable } from "../avis/avis";
+import { VehiculeTable } from "../vehicule";
+import { ReservationTable } from "../reservation";
+import { TrajetTable } from "../trajet";
+import { AvisTable } from "../avis";
 
 
 export const usersRelations = relations(UsersTable, ({ many }) => ({
@@ -72,7 +72,7 @@ export const avisRelations = relations(AvisTable, ({ one }) => ({
 
     // Et à un trajet
     trajet:   one(TrajetTable, {
-        fields:     [AvisTable.id_passager],
+        fields:     [AvisTable.id_trajet],
         references: [TrajetTable.id],
     }),
 
