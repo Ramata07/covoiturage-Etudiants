@@ -1,6 +1,8 @@
 import env from "@/config/env";
 import { PublicUser, UsersTable } from "@/db/schema/auth-profiles/user";
 import { userRoles } from "@/db/schema/enums/enums";
+import { authenticated } from "@/middlewares/authenticated";
+import { getUserProfile } from "@/middlewares/get-user-profile";
 import { validateRequest } from "@/middlewares/validate-request";
 import { ApiResponse, successResponse, errorResponse } from "@/utils/api-response";
 import { Router, type Request, type Response } from "express";
@@ -24,33 +26,12 @@ export const authRoutes = Router();
 // ME
 authRoutes.get(
   "/me",
+  authenticated,
+  getUserProfile,
   async (req, res: Response<ApiResponse<PublicUser>>) => {
-
-    const authHeader = req.headers.authorization;
-    const tokenMe = authHeader?.split(" ")[1]; //au lieu de l'espace, mettre Bearer
-
-    if (!tokenMe) {
-    return res.status(401).json(errorResponse("Token manquant"));
-}
-
-  try {
-
-    const tokenDataMe = jwt.verify(tokenMe, env.JWT_SECRET) as { id: string; role: string };
-
-    const existingUser = await db.select().from(UsersTable).where(eq(UsersTable.id, tokenDataMe.id)); //mettre tout sauf created_at et updated_at
-
-    if (existingUser.length === 0) {
-      return res.status(404).json(errorResponse("Utilisateur non trouvé"));
-    }
-
-    const user = existingUser[0]!;
-    const { mot_de_passe, ...publicUser } = user;
-    res.json(successResponse(publicUser));
-  
-} catch {
-    return res.status(401).json(errorResponse("Token invalide"));
-
-}});
+    res.json(successResponse(req.user!));
+  },
+);
 
 
 // LOGIN
@@ -140,25 +121,15 @@ const reset_password_schema = z.object({
 
 type ResetPasswordBody = z.infer<typeof reset_password_schema>;
 
-authRoutes.post("/reset-password", 
+authRoutes.post("/reset-password",
+  authenticated,
   validateRequest({ body: reset_password_schema }),
   async (req:Request<{},{},ResetPasswordBody>,
          res: Response<ApiResponse<{ message: string }>>
         ) => {
         const { password, new_password } = req.body;
 
-const authHeader = req.headers.authorization;
-
-const tokenPassword =authHeader?.split(" ")[1];
-
-if (!tokenPassword) {
-  return res.status(401).json(errorResponse("Token manquant"));
-}
-
- try {
-    const tokenPasswordData = jwt.verify(tokenPassword, env.JWT_SECRET) as { id: string; role: string };
-    
-    const existingUser = await db.select().from(UsersTable).where(eq(UsersTable.id, tokenPasswordData.id));
+    const existingUser = await db.select().from(UsersTable).where(eq(UsersTable.id, req.auth!.id));
 
     if (existingUser.length === 0) {
       return res.status(404).json(errorResponse("Utilisateur non trouvé"));
@@ -178,9 +149,5 @@ const hashedNewPassword = await bcrypt.hash(new_password, 15);
 await db.update(UsersTable).set({mot_de_passe: hashedNewPassword}).where(eq(UsersTable.id, user.id));
 
 res.json(successResponse({ message: "Mot de passe mis à jour avec succès" }));
-
-} catch {
-    return res.status(401).json(errorResponse("Token invalide"));
-  }
 
 });

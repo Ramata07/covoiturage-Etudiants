@@ -4,8 +4,16 @@ Corriger l'implémentation des fichiers (enums, relations, les fichiers index ma
 Générer et appliquer les migrations (Tout ce qui manipuler dans le schema de la BDD faut appliquer la migration) : Done
 Utiliser direct env. et non process.env. pour les variables d'environnement (JWT_SECRET) : Done
 
-Créer les 2 middlewares: Authenticated, GetUserProfile
-Rajouter les access et refresh token pour l'authentification (dans l'endpoint validation du code OTP)
+Créer les 2 middlewares: Authenticated, GetUserProfile: Done
+
+Rajouter les access et refresh token pour l'authentification (dans l'endpoint validation du code OTP): 
+        créer une nouvelle table refresh tokens avec l'id du user comme FK
+        créer la relation avec le user
+        faire des recherches sur le renvoi du token
+        modifier dans login et register pour que ça prenne en compte access et refresh token
+        création de l'endpoint
+        migration
+
 Ajouter une table OTP pour la vérification (avec un endpoint spécifique)
 Ajouter de nouveaux endpoints pour renvoyer un nouveau code (pas reçu de code clique sur le lien "renvoyer un nouveau code", vérification OTP, refresh token)
 Tester avec Postman
