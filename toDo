@@ -6,13 +6,16 @@ Utiliser direct env. et non process.env. pour les variables d'environnement (JWT
 
 Créer les 2 middlewares: Authenticated, GetUserProfile: Done
 
-Rajouter les access et refresh token pour l'authentification (dans l'endpoint validation du code OTP): 
-        créer une nouvelle table refresh tokens avec l'id du user comme FK
-        créer la relation avec le user
-        faire des recherches sur le renvoi du token
-        modifier dans login et register pour que ça prenne en compte access et refresh token
-        création de l'endpoint
-        migration
+Rajouter les access et refresh token pour l'authentification (dans l'endpoint validation du code OTP): Done
+        créer une nouvelle table refresh tokens avec l'id du user comme FK: Done
+        créer la relation avec le user: Done
+        faire des recherches sur le renvoi du token: Done   
+                génération(login/register -> token, hashé et inséré en BDD)     
+                vérification(dans l'endpoint on vérifie si le hash du token est en BDD si oui access token sinon 401)
+                rotation(ancien refresh revoqué)
+        modifier dans login et register pour que ça prenne en compte access et refresh token: Done
+        création de l'endpoint: Done
+        migration: Done
 
 Ajouter une table OTP pour la vérification (avec un endpoint spécifique)
 Ajouter de nouveaux endpoints pour renvoyer un nouveau code (pas reçu de code clique sur le lien "renvoyer un nouveau code", vérification OTP, refresh token)

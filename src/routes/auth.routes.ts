@@ -12,6 +12,8 @@ import db from "@/db";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 import { randomUUID } from "crypto";
+import { createRefreshToken, revokeRefreshToken, verifyRefreshToken } from "@/utils/refresh-token";
+import { HttpError } from "@/errors/http-error";
 
 
 /**
@@ -28,7 +30,7 @@ authRoutes.get(
   "/me",
   authenticated,
   getUserProfile,
-  async (req, res: Response<ApiResponse<PublicUser>>) => {
+  async (req: Request, res: Response<ApiResponse<PublicUser>>) => {
     res.json(successResponse(req.user!));
   },
 );
@@ -47,10 +49,10 @@ authRoutes.post(
   validateRequest({ body: loginSchema }),
   async (
     req: Request<{}, {}, LoginBody>,
-    res: Response<ApiResponse<{ email: string; token: string }>>,
+    res: Response<ApiResponse<{ email: string; accessToken: string; refreshToken: string }>>,
   ) => {
     const { email, password } = req.body;
-  
+
     const existingUser = await db.select().from(UsersTable).where(eq(UsersTable.email, email));
     if (existingUser.length === 0) {
       return res.status(404).json(errorResponse("Email non trouvé"));
@@ -62,9 +64,10 @@ authRoutes.post(
       return res.status(401).json(errorResponse("Mot de passe incorrect"));
     }
 
-     const tokenLogin = jwt.sign({id: user.id, role: user.role }, env.JWT_SECRET, { expiresIn: "7d" });
+    const accessToken = jwt.sign({ id: user.id, role: user.role }, env.JWT_SECRET, { expiresIn: "15m" });
+    const refreshToken = await createRefreshToken(user.id);
 
-      res.json(successResponse({ email, token: tokenLogin }));
+    res.json(successResponse({ email, accessToken, refreshToken }));
   },
 
 );
@@ -87,7 +90,7 @@ authRoutes.post(
   validateRequest({ body: registerSchema }),
   async (
     req: Request<{}, {}, RegisterBody>,
-    res: Response<ApiResponse<PublicUser>>,
+    res: Response<ApiResponse<PublicUser & { accessToken: string; refreshToken: string }>>,
   ) => {
     const { nom, prenom, email, mot_de_passe, role, photo } = req.body;
 
@@ -104,10 +107,46 @@ authRoutes.post(
       .values({ id, nom, prenom, email, mot_de_passe: hashedPassword, role, photo })
       .returning();
 
-    const tokenRegister = jwt.sign({ id, role }, env.JWT_SECRET, { expiresIn: "7d" });
+    const accessToken = jwt.sign({ id, role }, env.JWT_SECRET, { expiresIn: "15m" });
+    const refreshToken = await createRefreshToken(id);
 
     const { created_At, updated_At } = newUser[0]!;
-     res.json(successResponse({ id, nom, prenom, email, role, photo, created_At, updated_At, token: tokenRegister }));
+    res.json(successResponse({ id, nom, prenom, email, role, photo, created_At, updated_At, accessToken, refreshToken }));
+  },
+);
+//
+
+// REFRESH TOKEN
+const refreshTokenSchema = z.object({
+  refreshToken: z.string().min(1),
+});
+
+type RefreshTokenBody = z.infer<typeof refreshTokenSchema>;
+
+authRoutes.post(
+  "/refresh-token",
+  validateRequest({ body: refreshTokenSchema }),
+  async (
+    req: Request<{}, {}, RefreshTokenBody>,
+    res: Response<ApiResponse<{ accessToken: string; refreshToken: string }>>,
+  ) => {
+    const { refreshToken } = req.body;
+
+    const stored = await verifyRefreshToken(refreshToken);
+
+    const existingUser = await db.select().from(UsersTable).where(eq(UsersTable.id, stored.id_user));
+    const user = existingUser[0];
+    if (!user) {
+      throw new HttpError(404, "Utilisateur non trouvé");
+    }
+
+    // Rotation
+    await revokeRefreshToken(stored.id);
+
+    const accessToken = jwt.sign({ id: user.id, role: user.role }, env.JWT_SECRET, { expiresIn: "15m" });
+    const newRefreshToken = await createRefreshToken(user.id);
+
+    res.json(successResponse({ accessToken, refreshToken: newRefreshToken }));
   },
 );
 //

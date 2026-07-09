@@ -1,5 +1,5 @@
 import { relations } from "drizzle-orm";
-import { UsersTable } from "../auth-profiles";
+import { UsersTable, RefreshTokenTable } from "../auth-profiles";
 import { VehiculeTable } from "../vehicule";
 import { ReservationTable } from "../reservation";
 import { TrajetTable } from "../trajet";
@@ -16,7 +16,17 @@ export const usersRelations = relations(UsersTable, ({ many }) => ({
   trajets: many(TrajetTable),
   // Un user peut avoir 0 ou plusieurs avis
   avis: many(AvisTable),
+  // Un user peut avoir 0 ou plusieurs refresh tokens (multi-appareils)
+  refreshTokens: many(RefreshTokenTable),
 
+}));
+
+// Un refresh token appartient à un user
+export const refreshTokenRelations = relations(RefreshTokenTable, ({ one }) => ({
+  user: one(UsersTable, {
+    fields: [RefreshTokenTable.id_user],
+    references: [UsersTable.id],
+  }),
 }));
 
 
