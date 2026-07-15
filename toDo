@@ -17,9 +17,9 @@ Rajouter les access et refresh token pour l'authentification (dans l'endpoint va
         création de l'endpoint: Done
         migration: Done
 
-Ajouter une table OTP pour la vérification (avec un endpoint spécifique)
-Ajouter de nouveaux endpoints pour renvoyer un nouveau code (pas reçu de code clique sur le lien "renvoyer un nouveau code", vérification OTP, refresh token)
-Tester avec Postman
+Ajouter une table OTP pour la vérification (avec un endpoint spécifique): Done
+Ajouter de nouveaux endpoints pour renvoyer un nouveau code (pas reçu de code clique sur le lien "renvoyer un nouveau code", vérification OTP, refresh token): Done
+Tester avec Postman: register,verify-otp,resend-otp,login,me, refresh-token: Done
 
 */
 

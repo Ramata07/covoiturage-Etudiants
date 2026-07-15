@@ -1,5 +1,5 @@
 import { relations } from "drizzle-orm";
-import { UsersTable, RefreshTokenTable } from "../auth-profiles";
+import { UsersTable, RefreshTokenTable, OtpTable } from "../auth-profiles";
 import { VehiculeTable } from "../vehicule";
 import { ReservationTable } from "../reservation";
 import { TrajetTable } from "../trajet";
@@ -18,6 +18,8 @@ export const usersRelations = relations(UsersTable, ({ many }) => ({
   avis: many(AvisTable),
   // Un user peut avoir 0 ou plusieurs refresh tokens (multi-appareils)
   refreshTokens: many(RefreshTokenTable),
+  // Un user peut avoir 0 ou plusieurs codes OTP (historique)
+  otps: many(OtpTable),
 
 }));
 
@@ -25,6 +27,14 @@ export const usersRelations = relations(UsersTable, ({ many }) => ({
 export const refreshTokenRelations = relations(RefreshTokenTable, ({ one }) => ({
   user: one(UsersTable, {
     fields: [RefreshTokenTable.id_user],
+    references: [UsersTable.id],
+  }),
+}));
+
+// Un OTP appartient à un user
+export const otpRelations = relations(OtpTable, ({ one }) => ({
+  user: one(UsersTable, {
+    fields: [OtpTable.id_user],
     references: [UsersTable.id],
   }),
 }));

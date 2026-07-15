@@ -1,4 +1,3 @@
-import env from "@/config/env";
 import { PublicUser, UsersTable } from "@/db/schema/auth-profiles/user";
 import { userRoles } from "@/db/schema/enums/enums";
 import { authenticated } from "@/middlewares/authenticated";
@@ -10,9 +9,10 @@ import z from "zod";
 import { eq } from "drizzle-orm";
 import db from "@/db";
 import bcrypt from "bcrypt";
-import jwt from "jsonwebtoken";
 import { randomUUID } from "crypto";
+import { createAccessToken } from "@/utils/access-token";
 import { createRefreshToken, revokeRefreshToken, verifyRefreshToken } from "@/utils/refresh-token";
+import { createOtp, verifyOtp } from "@/utils/otp";
 import { HttpError } from "@/errors/http-error";
 
 
@@ -64,7 +64,11 @@ authRoutes.post(
       return res.status(401).json(errorResponse("Mot de passe incorrect"));
     }
 
-    const accessToken = jwt.sign({ id: user.id, role: user.role }, env.JWT_SECRET, { expiresIn: "15m" });
+    if (!user.email_verifie) {
+      throw new HttpError(403, "Compte non vérifié, veuillez vérifier votre code OTP");
+    }
+
+    const accessToken = createAccessToken(user);
     const refreshToken = await createRefreshToken(user.id);
 
     res.json(successResponse({ email, accessToken, refreshToken }));
@@ -90,7 +94,7 @@ authRoutes.post(
   validateRequest({ body: registerSchema }),
   async (
     req: Request<{}, {}, RegisterBody>,
-    res: Response<ApiResponse<PublicUser & { accessToken: string; refreshToken: string }>>,
+    res: Response<ApiResponse<{ email: string; message: string; otp: string }>>,
   ) => {
     const { nom, prenom, email, mot_de_passe, role, photo } = req.body;
 
@@ -103,15 +107,91 @@ authRoutes.post(
 
     const id = randomUUID();
 
-    const newUser = await db.insert(UsersTable)
-      .values({ id, nom, prenom, email, mot_de_passe: hashedPassword, role, photo })
-      .returning();
+    await db.insert(UsersTable)
+      .values({ id, nom, prenom, email, mot_de_passe: hashedPassword, role, photo });
 
-    const accessToken = jwt.sign({ id, role }, env.JWT_SECRET, { expiresIn: "15m" });
-    const refreshToken = await createRefreshToken(id);
+    const otp = await createOtp(id);
 
-    const { created_At, updated_At } = newUser[0]!;
-    res.json(successResponse({ id, nom, prenom, email, role, photo, created_At, updated_At, accessToken, refreshToken }));
+    res.json(successResponse({
+      email,
+      message: "Compte créé. Vérifiez votre code OTP pour l'activer.",
+      otp, 
+    }));
+  },
+);
+//
+
+// VERIFY OTP
+const verifyOtpSchema = z.object({
+  email: z.email(),
+  code: z.string().length(6),
+});
+
+type VerifyOtpBody = z.infer<typeof verifyOtpSchema>;
+
+authRoutes.post(
+  "/verify-otp",
+  validateRequest({ body: verifyOtpSchema }),
+  async (
+    req: Request<{}, {}, VerifyOtpBody>,
+    res: Response<ApiResponse<{ accessToken: string; refreshToken: string }>>,
+  ) => {
+    const { email, code } = req.body;
+
+    const existingUser = await db.select().from(UsersTable).where(eq(UsersTable.email, email));
+    if (existingUser.length === 0) {
+      return res.status(404).json(errorResponse("Utilisateur non trouvé"));
+    }
+
+    const user = existingUser[0]!;
+    if (user.email_verifie) {
+      throw new HttpError(409, "Compte déjà vérifié");
+    }
+
+    await verifyOtp(user.id, code);
+
+    await db.update(UsersTable).set({ email_verifie: true }).where(eq(UsersTable.id, user.id));
+
+    const accessToken = createAccessToken(user);
+    const refreshToken = await createRefreshToken(user.id);
+
+    res.json(successResponse({ accessToken, refreshToken }));
+  },
+);
+//
+
+// RESEND OTP
+const resendOtpSchema = z.object({
+  email: z.email(),
+});
+
+type ResendOtpBody = z.infer<typeof resendOtpSchema>;
+
+authRoutes.post(
+  "/resend-otp",
+  validateRequest({ body: resendOtpSchema }),
+  async (
+    req: Request<{}, {}, ResendOtpBody>,
+    res: Response<ApiResponse<{ message: string; otp: string }>>,
+  ) => {
+    const { email } = req.body;
+
+    const existingUser = await db.select().from(UsersTable).where(eq(UsersTable.email, email));
+    if (existingUser.length === 0) {
+      return res.status(404).json(errorResponse("Utilisateur non trouvé"));
+    }
+
+    const user = existingUser[0]!;
+    if (user.email_verifie) {
+      throw new HttpError(409, "Compte déjà vérifié");
+    }
+
+    const otp = await createOtp(user.id);
+
+    res.json(successResponse({
+      message: "Nouveau code OTP généré.",
+      otp, 
+    }));
   },
 );
 //
@@ -143,7 +223,7 @@ authRoutes.post(
     // Rotation
     await revokeRefreshToken(stored.id);
 
-    const accessToken = jwt.sign({ id: user.id, role: user.role }, env.JWT_SECRET, { expiresIn: "15m" });
+    const accessToken = createAccessToken(user);
     const newRefreshToken = await createRefreshToken(user.id);
 
     res.json(successResponse({ accessToken, refreshToken: newRefreshToken }));
