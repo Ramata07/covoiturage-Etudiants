@@ -10,7 +10,9 @@ export const VehiculeTable = pgTable("vehicules", {
       onDelete: "cascade",
       onUpdate: "cascade",
     })
-    .notNull(),
+    .notNull()
+    .unique(),
+
   nbre_places: integer("nbre_places").notNull(),
   modele: varchar("modele", { length: 100 }).notNull(),
   couleur: varchar("couleur", { length: 100 }).notNull(),
@@ -18,3 +20,15 @@ export const VehiculeTable = pgTable("vehicules", {
   created_At: createdAt(),
   updated_At: updatedAt(),
 });
+
+export type PublicVehicule = {
+  id: string;
+  immatriculation: string;
+  proprio: string;
+  nbre_places: number;
+  modele: string;
+  couleur: string;
+  marque: string;
+  created_At: string;
+  updated_At: string;
+};

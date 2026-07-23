@@ -12,10 +12,11 @@ export const app = express()
 app.use(cors({}));
 app.use(express.json());
 app.use(requestLogger);
-app.use(rateLimitMiddleware);
+//app.use(rateLimitMiddleware);
 
 //Routes
 app.use("/v1", apiRoutes);
+
 
 //Error handling middleware
 app.use(notFoundHandler);

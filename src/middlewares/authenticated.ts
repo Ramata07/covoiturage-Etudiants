@@ -25,6 +25,6 @@ export const authenticated: RequestHandler = (req, _res, next) => {
     req.auth = { id: decoded.sub!, role: decoded.role as UserRoles, scope: decoded.scope as string };
     next();
   } catch {
-    next(new HttpError(401, "Token invalide"));
+    next(new HttpError(401, "Token invalide ou expiré"));
   }
 };

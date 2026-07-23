@@ -1,0 +1,1 @@
+ALTER TABLE "vehicules" ADD CONSTRAINT "vehicules_proprio_unique" UNIQUE("proprio");

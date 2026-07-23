@@ -21,6 +21,12 @@ Ajouter une table OTP pour la vérification (avec un endpoint spécifique): Done
 Ajouter de nouveaux endpoints pour renvoyer un nouveau code (pas reçu de code clique sur le lien "renvoyer un nouveau code", vérification OTP, refresh token): Done
 Tester avec Postman: register,verify-otp,resend-otp,login,me, refresh-token: Done
 
+Remarques:
+Revoir les messages: etre plus explicite: Done
+modifier l'id pour mettre le préfixe (paramètre ksuid): Done
+
+
+Endpoint pour CRUD les véhicules (par le chauffeur): faire un update du role du user pour qu'il soit chauffeur s'il est client de base: Done
 */
 
 

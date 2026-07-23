@@ -1,6 +1,6 @@
 import { PublicUser, UsersTable } from "@/db/schema/auth-profiles/user";
 import { userRoles } from "@/db/schema/enums/enums";
-import { authenticated } from "@/middlewares/authenticated";
+import { authenticated} from "@/middlewares/authenticated";
 import { getUserProfile } from "@/middlewares/get-user-profile";
 import { validateRequest } from "@/middlewares/validate-request";
 import { ApiResponse, successResponse, errorResponse } from "@/utils/api-response";
@@ -9,11 +9,11 @@ import z from "zod";
 import { eq } from "drizzle-orm";
 import db from "@/db";
 import bcrypt from "bcrypt";
-import { randomUUID } from "crypto";
 import { createAccessToken } from "@/utils/access-token";
 import { createRefreshToken, revokeRefreshToken, verifyRefreshToken } from "@/utils/refresh-token";
 import { createOtp, verifyOtp } from "@/utils/otp";
 import { HttpError } from "@/errors/http-error";
+import { generateUid } from "@/utils/generate_uid";
 
 
 /**
@@ -105,12 +105,12 @@ authRoutes.post(
 
     const hashedPassword = await bcrypt.hash(mot_de_passe, 15);
 
-    const id = randomUUID();
+    const id = generateUid("usr_");
 
     await db.insert(UsersTable)
       .values({ id, nom, prenom, email, mot_de_passe: hashedPassword, role, photo });
 
-    const otp = await createOtp(id);
+    const otp = await createOtp(id); //en intégrant ça, ça permet de connaitre direct le code OTP sans vérif donc en production faudra modifier, pareil pour resend-otp 
 
     res.json(successResponse({
       email,
@@ -270,3 +270,4 @@ await db.update(UsersTable).set({mot_de_passe: hashedNewPassword}).where(eq(User
 res.json(successResponse({ message: "Mot de passe mis à jour avec succès" }));
 
 });
+
