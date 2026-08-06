@@ -33,15 +33,10 @@ vehiculeRoutes.post(
         res: Response<ApiResponse<PublicVehicule>>,
     ) => {
         const { immatriculation, nbre_places, modele, couleur, marque } = req.body;
-        const authId = req.auth?.id;
-
-        if (!authId) {
-            throw new HttpError(401, "Utilisateur non authentifié.");
-        }
 
         const existingVehicule = await db.select()
             .from(VehiculeTable)
-            .where(eq(VehiculeTable.proprio, authId));
+            .where(eq(VehiculeTable.proprio, req.auth!.id));
 
         if (existingVehicule.length > 0) {
             throw new HttpError(400, "Vous avez déjà un véhicule enregistré.");
@@ -50,10 +45,10 @@ vehiculeRoutes.post(
         const id = generateUid("vh_");
 
         const [vehicule] = await db.insert(VehiculeTable)
-            .values({ id, immatriculation, proprio: authId, nbre_places, modele, couleur, marque })
+            .values({ id, immatriculation, proprio: req.auth!.id, nbre_places, modele, couleur, marque })
             .returning();
 
-        await db.update(UsersTable).set({ role: "chauffeur" }).where(eq(UsersTable.id, authId));
+        await db.update(UsersTable).set({ role: "chauffeur" }).where(eq(UsersTable.id, req.auth!.id));
 
         return res.status(201).json(successResponse(vehicule!));
     });
@@ -65,13 +60,7 @@ vehiculeRoutes.get(
     authenticated,
     async(req: Request, res: Response<ApiResponse<PublicVehicule>>)=>{
 
-    const authId = req.auth?.id;
-
-    if (!authId) {
-        throw new HttpError(401, "Utilisateur non authentifié.");
-    }
-
-    const vehicule = await db.select().from(VehiculeTable).where(eq(VehiculeTable.proprio, authId)).limit(1);
+    const vehicule = await db.select().from(VehiculeTable).where(eq(VehiculeTable.proprio, req.auth!.id)).limit(1);
 
     if (vehicule.length === 0) {
         throw new HttpError(404, "Aucun véhicule trouvé pour cet utilisateur.");
@@ -103,13 +92,8 @@ vehiculeRoutes.put(
         res: Response<ApiResponse<PublicVehicule>>
     ) => {
         const { modele, nbre_places, couleur, marque } = req.body;
-        const authId = req.auth?.id;
 
-        if (!authId) {
-            throw new HttpError(401, "Utilisateur non authentifié.");
-        }
-
-        const existingVehicule = await db.select().from(VehiculeTable).where(eq(VehiculeTable.proprio, authId));
+        const existingVehicule = await db.select().from(VehiculeTable).where(eq(VehiculeTable.proprio, req.auth!.id));
 
         if (existingVehicule.length === 0) {
             throw new HttpError(404, "Aucun véhicule trouvé pour cet utilisateur.");
@@ -117,7 +101,7 @@ vehiculeRoutes.put(
 
     const vehicule = await db.update(VehiculeTable)
         .set({ modele, nbre_places, couleur, marque })
-        .where(eq(VehiculeTable.proprio, authId))
+        .where(eq(VehiculeTable.proprio, req.auth!.id))
         .returning();
 
     res.json(successResponse(vehicule[0]!));
@@ -130,23 +114,17 @@ vehiculeRoutes.delete(
     authenticated,
     async (req: Request, res: Response<ApiResponse<PublicVehicule>>) => {
 
-    const authId = req.auth?.id;
-
-    if (!authId){
-        throw new HttpError(401, "Utilisateur non authentifié.");
-    }
-
-    const existingVehicule = await db.select().from(VehiculeTable).where(eq(VehiculeTable.proprio, authId));
+    const existingVehicule = await db.select().from(VehiculeTable).where(eq(VehiculeTable.proprio, req.auth!.id));
 
     if (existingVehicule.length === 0) {
         throw new HttpError(404, "Aucun véhicule trouvé pour cet utilisateur.");
     }
 
-    const vehicule = await db.delete(VehiculeTable).where(eq(VehiculeTable.proprio, authId)).returning();
+    const vehicule = await db.delete(VehiculeTable).where(eq(VehiculeTable.proprio, req.auth!.id)).returning();
 
     await db.update(UsersTable)
     .set({ role: "client" })
-    .where(eq(UsersTable.id, authId));
+    .where(eq(UsersTable.id, req.auth!.id));
 
     res.json(successResponse(vehicule[0]!));
    

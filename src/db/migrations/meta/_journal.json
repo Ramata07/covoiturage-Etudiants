@@ -43,6 +43,13 @@
       "when": 1784681416488,
       "tag": "0005_amusing_leper_queen",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1786050269733,
+      "tag": "0006_married_arachne",
+      "breakpoints": true
     }
   ]
 }

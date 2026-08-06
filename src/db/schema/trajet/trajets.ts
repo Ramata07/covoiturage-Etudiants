@@ -7,13 +7,13 @@ import { createdAt, updatedAt } from "@/db/schema-helpers.js";
 export const TrajetTable = pgTable("trajets", {
 
     id: varchar("id", { length: 100 }).primaryKey(),
-    id_conducteur: varchar("id_conducteur", { length: 150 }).references(() => UsersTable.id),
+    id_conducteur: varchar("id_conducteur", { length: 150 }).references(() => UsersTable.id).notNull(),
     id_vehicule: varchar("id_vehicule", { length: 100 }).references(() => VehiculeTable.id),
     destination: varchar("destination", {length: 100}).notNull(),
     point_depart: varchar("point_depart", {length: 100}).notNull(),
     prix: integer("prix").notNull(),
     nbre_passagers: integer("nbre_passagers").notNull(),
-    date_depart: date("date_depart"),
+    date_depart: date("date_depart").notNull(),
     nbre_places_dispo: integer("nbre_places_dispo").notNull(),
     nbre_places_restants: integer("nbre_places_restants").notNull(),
     statut: varchar("statut", {length: 20}).notNull(),
@@ -23,3 +23,21 @@ export const TrajetTable = pgTable("trajets", {
     updated_At: updatedAt(),
 
 });
+
+export type PublicTrajet = {
+    id: string;
+    id_conducteur: string;
+    id_vehicule: string | null;
+    destination: string;
+    point_depart: string;
+    prix: number;
+    nbre_passagers: number;
+    date_depart: string;
+    nbre_places_dispo: number;
+    nbre_places_restants: number;
+    statut: string;
+    heure_depart: string;
+    heure_arrivee: string;
+    created_At: string;
+    updated_At: string;
+}

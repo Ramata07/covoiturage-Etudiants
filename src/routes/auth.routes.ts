@@ -16,13 +16,6 @@ import { HttpError } from "@/errors/http-error";
 import { generateUid } from "@/utils/generate_uid";
 
 
-/**
- * TODO:
- * - Implementer tous les endpoints
- * - Implémenter une logique basique de JWT token pour l'authentification
- */
-
-
 export const authRoutes = Router();
 
 // ME
